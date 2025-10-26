@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+*.pyc
+
+# Environment Variables (CRITICAL - Never commit!)
+.env
+.env.*
+*.env
+backend/.env
+backend/.env.*
+frontend/.env.local
+frontend/.env*.local
+
+# Dependencies
+node_modules/
+.pnp/
+.pnp.*
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Testing & Coverage
+coverage/
+*.coverage
+htmlcov/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Secrets & Keys (CRITICAL)
+*.pem
+*.key
+*.cert
+secrets/
+credentials/
+
