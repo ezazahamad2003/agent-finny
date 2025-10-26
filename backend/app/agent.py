@@ -196,9 +196,10 @@ async def anomalies(req: AnomaliesReq):
     ][:3]
     
     # Ask AI for analysis
+    outliers_str = ', '.join([f'${abs(float(o.get("delta", 0)))}' for o in outliers[:3]])
     messages = [
         {"role":"system","content":"You are a financial risk analyst specializing in spend management. Identify unusual patterns and assess their impact on runway and budget. Provide concise risk assessment in <100 words focusing on: 1) Whether anomalies are concerning or expected (one-time equipment purchases vs recurring waste), 2) Potential impact on monthly burn rate, 3) Specific recommendation to investigate or optimize."},
-        {"role":"user","content": f"Anomaly Analysis:\n- Found {len(outliers)} outlier transactions (>2x average)\n- Average transaction: ${avg:.2f}\n- Total monthly spend by category: {json.dumps(cat_spend)}\n- Largest outliers: {', '.join([f'${abs(float(o['delta']))}' for o in outliers[:3]])}\n\nAssess: Are these anomalies concerning (recurring waste, fraud) or expected (one-time investments)? What's the risk to runway?"}
+        {"role":"user","content": f"Anomaly Analysis:\n- Found {len(outliers)} outlier transactions (>2x average)\n- Average transaction: ${avg:.2f}\n- Total monthly spend by category: {json.dumps(cat_spend)}\n- Largest outliers: {outliers_str}\n\nAssess: Are these anomalies concerning (recurring waste, fraud) or expected (one-time investments)? What's the risk to runway?"}
     ]
 
     headers = {"Content-Type":"application/json","Authorization":f"Bearer {lava_token()}"}
@@ -258,6 +259,9 @@ async def what_if(req: WhatIfReq):
     
     new_runway = (new_cash / new_burn) if new_burn > 0.01 else 999
     scenario_text = ", ".join(scenario_desc) if scenario_desc else "No changes"
+    
+    # Calculate runway change
+    runway_change = new_runway - current_runway if new_runway < 999 else 999
     
     # Ask AI for strategic analysis
     runway_change_desc = f"+{runway_change:.1f}" if runway_change > 0 else f"{runway_change:.1f}"
