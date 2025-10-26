@@ -7,7 +7,7 @@ import { usePlaidLink } from "react-plaid-link";
 export default function Connect() {
   const router = useRouter();
   const sp = useSearchParams();
-  const workspace_id = sp.get("workspace_id")!;
+  const workspace_id = sp.get("workspace_id") || "eff079c8-5bf9-4a45-8142-2b4d009e1eb4";
   const name = sp.get("name") || "Your Startup";
   const [linkToken, setLinkToken] = useState<string>();
   const [loading, setLoading] = useState(false);
@@ -37,82 +37,100 @@ export default function Connect() {
     },
   });
 
-  const handleDemoData = async () => {
-    setLoading(true);
-    try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/plaid/demo-item`, { workspace_id });
-      router.push(`/dashboard?workspace_id=${workspace_id}&name=${encodeURIComponent(name)}`);
-    } catch (error) {
-      console.error("Error loading demo data:", error);
-      alert("Failed to load demo data. Please try again.");
-      setLoading(false);
-    }
-  };
-
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Connect Your Bank</h1>
-          <p className="text-gray-600">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6">
+      <div className="max-w-5xl w-full">
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-white mb-4">Connect Your Bank</h1>
+          <p className="text-xl text-gray-300">
             Link your bank account to get real-time financial insights
           </p>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-blue-900 font-medium mb-2">🧪 Sandbox Test Credentials</p>
-          <div className="text-sm text-blue-800 space-y-1">
-            <p>
-              <strong>Username:</strong> user_good
-            </p>
-            <p>
-              <strong>Password:</strong> pass_good
-            </p>
-            <p>
-              <strong>MFA Code:</strong> 1234
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Side - Connection Box */}
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-700">
+            <h2 className="text-2xl font-bold text-white mb-6">Connect with Plaid Sandbox</h2>
+            
+            <button
+              onClick={() => open()}
+              disabled={!ready || !linkToken || loading}
+              className="w-full px-8 py-5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-lg font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-green-500/50 flex items-center justify-center gap-3"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin h-6 w-6 border-3 border-white border-t-transparent rounded-full" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl">🏦</span> Connect Sandbox Bank
+                </>
+              )}
+            </button>
+
+            <p className="text-sm text-gray-400 text-center mt-6">
+              Powered by Plaid • Your data is secure
             </p>
           </div>
-        </div>
 
-        <div className="space-y-4">
-          <button
-            onClick={() => open()}
-            disabled={!ready || !linkToken || loading}
-            className="w-full px-6 py-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <span>🏦</span> Connect Sandbox Bank
-              </>
-            )}
-          </button>
+          {/* Right Side - Instructions */}
+          <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-8 border border-gray-700/50 backdrop-blur-sm">
+            <h2 className="text-2xl font-bold text-white mb-6">📋 How to Connect</h2>
+            
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                  1
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">Click Connect Button</h3>
+                  <p className="text-gray-400">Click the "Connect Sandbox Bank" button on the left</p>
+                </div>
+              </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                  2
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">Enter Test Credentials</h3>
+                  <div className="bg-gray-900/50 rounded-lg p-4 mt-2 border border-gray-700">
+                    <p className="text-sm text-gray-300 mb-2"><strong className="text-green-400">Username:</strong> user_good</p>
+                    <p className="text-sm text-gray-300 mb-2"><strong className="text-green-400">Password:</strong> pass_good</p>
+                    <p className="text-sm text-gray-300"><strong className="text-green-400">MFA Code:</strong> 1234</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                  3
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">Select Accounts</h3>
+                  <p className="text-gray-400">Choose which accounts to link to FINNY</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                  4
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">View Dashboard</h3>
+                  <p className="text-gray-400">Access your financial insights and AI-powered CFO recommendations</p>
+                </div>
+              </div>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">OR</span>
+
+            <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <p className="text-sm text-blue-300">
+                💡 <strong>Tip:</strong> This is a sandbox environment. Your real banking data is never accessed.
+              </p>
             </div>
           </div>
-
-          <button
-            onClick={handleDemoData}
-            disabled={loading}
-            className="w-full px-6 py-4 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            ⚡ Load Demo Data (One-Click)
-          </button>
         </div>
-
-        <p className="text-xs text-gray-500 text-center mt-6">
-          Powered by Plaid • Your data is secure
-        </p>
       </div>
     </main>
   );
