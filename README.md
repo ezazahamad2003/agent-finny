@@ -1,4 +1,7 @@
-# 🤖 Agent Finny
+<div align="center">
+  <img src="frontend/public/logo.png" alt="Agent Finny Logo" width="200"/>
+  <h1>🤖 Agent Finny</h1>
+</div>
 
 **AI-powered CFO assistant for startups** - Real-time financial insights with AI-driven automation.
 
