@@ -5,6 +5,7 @@ from supabase import create_client
 import os, json, base64, httpx, time
 from datetime import date, timedelta
 from app.metrics import summary, burn_runway, WS
+from app.vector_db import vector_db
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
