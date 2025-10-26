@@ -1,6 +1,6 @@
 <div align="center">
   <img src="frontend/public/logo.png" alt="Agent Finny Logo" width="200"/>
-  <h1>🤖 Agent Finny</h1>
+  <h1>Agent Finny</h1>
 </div>
 
 **AI-powered CFO assistant for startups** - Real-time financial insights with AI-driven automation.
@@ -8,7 +8,9 @@
 ## 🎯 Live Demo
 
 - **🌐 Live Website:** [https://agent-finny.vercel.app/](https://agent-finny.vercel.app/)
-- **🎥 Demo Video:** [Watch on YouTube](https://www.youtube.com/watch?v=fRZdHzfZcdM)
+
+### 📺 **Demo Video**
+**[Watch Demo Video on YouTube →](https://www.youtube.com/watch?v=fRZdHzfZcdM)**
 
 ## 🏆 Built for Startup Track
 
