@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import axios from "axios";
 import { useSearchParams } from "next/navigation";
 import { Bar } from "react-chartjs-2";
@@ -16,7 +16,7 @@ import Navbar from "@/components/Navbar";
 
 Chart.register(BarElement, CategoryScale, LinearScale, Legend, Tooltip, Title);
 
-export default function Dashboard() {
+function DashboardContent() {
   const sp = useSearchParams();
   const workspace_id = sp.get("workspace_id") || "eff079c8-5bf9-4a45-8142-2b4d009e1eb4";
   const name = sp.get("name") || "Your Startup";
@@ -265,6 +265,16 @@ function KpiCard({
         </div>
       )}
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
+      <div className="animate-spin h-12 w-12 border-4 border-green-500 border-t-transparent rounded-full" />
+    </div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }
 
