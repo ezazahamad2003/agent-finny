@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import axios from "axios";
 import { useSearchParams, useRouter } from "next/navigation";
 import { usePlaidLink } from "react-plaid-link";
 
-export default function Connect() {
+function ConnectContent() {
   const router = useRouter();
   const sp = useSearchParams();
   const workspace_id = sp.get("workspace_id") || "eff079c8-5bf9-4a45-8142-2b4d009e1eb4";
@@ -133,6 +133,16 @@ export default function Connect() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function Connect() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#0f0f0f]">
+      <div className="animate-spin h-12 w-12 border-4 border-green-500 border-t-transparent rounded-full" />
+    </div>}>
+      <ConnectContent />
+    </Suspense>
   );
 }
 
