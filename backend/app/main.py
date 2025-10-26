@@ -5,6 +5,7 @@ from app.metrics import router as metrics_router
 from app.agent import router as agent_router
 from app.waitlist import router as waitlist_router
 from app.transactions import router as transactions_router
+from app.tasks import router as tasks_router
 
 app = FastAPI(
     title="Agent Finny API",
@@ -27,6 +28,7 @@ app.include_router(metrics_router)
 app.include_router(agent_router)
 app.include_router(waitlist_router)
 app.include_router(transactions_router)
+app.include_router(tasks_router)
 
 @app.get("/")
 def root():

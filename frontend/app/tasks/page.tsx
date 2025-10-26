@@ -1,56 +1,58 @@
 "use client";
-import { useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, Suspense, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import axios from "axios";
 
 interface Task {
   id: string;
   title: string;
   description: string;
   status: "todo" | "in_progress" | "done";
-  priority: "low" | "medium" | "high";
-  createdAt: Date;
+  email?: string;
+  links?: string[];
+  meeting_id?: string;
+  meeting_link?: string;
+  created_at: string;
 }
 
 const ALLOWED_EMAIL = "chicostategac@gmail.com";
 
 function TasksContent() {
   const sp = useSearchParams();
+  const router = useRouter();
   const workspace_id = sp.get("workspace_id") || "eff079c8-5bf9-4a45-8142-2b4d009e1eb4";
   
   const [emailInput, setEmailInput] = useState("");
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [showError, setShowError] = useState(false);
   
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: "1",
-      title: "Review Q4 Financials",
-      description: "Analyze revenue and expenses for Q4",
-      status: "in_progress",
-      priority: "high",
-      createdAt: new Date(),
-    },
-    {
-      id: "2",
-      title: "Cut SaaS Subscriptions",
-      description: "Review and cancel unused subscriptions",
-      status: "todo",
-      priority: "high",
-      createdAt: new Date(),
-    },
-    {
-      id: "3",
-      title: "Update Cash Flow Forecast",
-      description: "Project next 6 months cash flow",
-      status: "todo",
-      priority: "medium",
-      createdAt: new Date(),
-    },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDescription, setNewTaskDescription] = useState("");
+  const [newTaskEmail, setNewTaskEmail] = useState("");
+  const [newTaskLinks, setNewTaskLinks] = useState("");
   const [showAddTask, setShowAddTask] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      loadTasks();
+    }
+  }, [isAuthorized, workspace_id]);
+
+  const loadTasks = async () => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/tasks/list/${workspace_id}`);
+      setTasks(response.data.tasks || []);
+    } catch (error) {
+      console.error("Failed to load tasks:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEmailVerify = () => {
     if (emailInput.toLowerCase().trim() === ALLOWED_EMAIL.toLowerCase()) {
@@ -61,42 +63,60 @@ function TasksContent() {
     }
   };
 
-  const addTask = () => {
+  const createTask = async () => {
     if (!newTaskTitle.trim()) return;
+    setCreating(true);
     
-    const newTask: Task = {
-      id: Date.now().toString(),
-      title: newTaskTitle,
-      description: "",
-      status: "todo",
-      priority: "medium",
-      createdAt: new Date(),
-    };
-    
-    setTasks([newTask, ...tasks]);
-    setNewTaskTitle("");
-    setShowAddTask(false);
+    try {
+      const links = newTaskLinks.split(',').map(l => l.trim()).filter(Boolean);
+      
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/tasks/create`, {
+        workspace_id,
+        title: newTaskTitle,
+        description: newTaskDescription || newTaskTitle,
+        email: newTaskEmail || undefined,
+        links: links.length > 0 ? links : undefined
+      });
+      
+      await loadTasks();
+      setNewTaskTitle("");
+      setNewTaskDescription("");
+      setNewTaskEmail("");
+      setNewTaskLinks("");
+      setShowAddTask(false);
+      
+      alert("✅ Task created! Click 'Start Meeting' to begin the AI conversation.");
+    } catch (error) {
+      console.error("Failed to create task:", error);
+      alert("Failed to create task");
+    } finally {
+      setCreating(false);
+    }
   };
 
-  const toggleTaskStatus = (id: string) => {
-    setTasks(tasks.map(task => {
-      if (task.id === id) {
-        const statusOrder: Task["status"][] = ["todo", "in_progress", "done"];
-        const currentIndex = statusOrder.indexOf(task.status);
-        const nextStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
-        return { ...task, status: nextStatus };
-      }
-      return task;
-    }));
+  const startMeeting = async (taskId: string) => {
+    try {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/tasks/start-meeting/${taskId}`);
+      const { meeting_link } = response.data;
+      
+      // Navigate to meeting page
+      router.push(meeting_link);
+    } catch (error) {
+      console.error("Failed to start meeting:", error);
+      alert("Failed to start meeting");
+    }
   };
 
-  const deleteTask = (id: string) => {
-    setTasks(tasks.filter(task => task.id !== id));
+  const completeTask = async (taskId: string) => {
+    try {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/tasks/complete/${taskId}`);
+      await loadTasks();
+      alert("✅ Task completed! Summary email sent.");
+    } catch (error) {
+      console.error("Failed to complete task:", error);
+      alert("Failed to complete task");
+    }
   };
-
-  const todoTasks = tasks.filter(t => t.status === "todo");
-  const inProgressTasks = tasks.filter(t => t.status === "in_progress");
-  const doneTasks = tasks.filter(t => t.status === "done");
 
   // Show access restriction if not authorized
   if (!isAuthorized) {
@@ -114,14 +134,14 @@ function TasksContent() {
                 </div>
                 <h2 className="text-xl font-semibold mb-2">Access Restricted</h2>
                 <p className="text-gray-400 text-sm mb-6">
-                  The Tasks feature is currently limited to authorized users due to API rate limits and infrastructure costs.
+                  We'll send you an email to book a demo or reserve a spot for early access.
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Authorized Email
+                    Enter your email
                   </label>
                   <input
                     type="email"
@@ -163,6 +183,10 @@ function TasksContent() {
     );
   }
 
+  const todoTasks = tasks.filter(t => t.status === "todo");
+  const inProgressTasks = tasks.filter(t => t.status === "in_progress");
+  const doneTasks = tasks.filter(t => t.status === "done");
+
   return (
     <>
       <Navbar />
@@ -187,27 +211,51 @@ function TasksContent() {
         <div className="max-w-7xl mx-auto px-8 py-8 space-y-6">
           {/* Add Task Form */}
           {showAddTask && (
-            <div className="bg-[#1a1a1a] rounded-lg p-4 border border-gray-800">
+            <div className="bg-[#1a1a1a] rounded-lg p-6 border border-gray-800 space-y-4">
               <input
                 type="text"
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && addTask()}
-                placeholder="Task title..."
+                placeholder="Task name (e.g., Catch up with investor)"
                 className="w-full px-4 py-2 bg-[#0f0f0f] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
                 autoFocus
               />
-              <div className="flex gap-2 mt-3">
+              <textarea
+                value={newTaskDescription}
+                onChange={(e) => setNewTaskDescription(e.target.value)}
+                placeholder="Description"
+                rows={3}
+                className="w-full px-4 py-2 bg-[#0f0f0f] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <input
+                type="email"
+                value={newTaskEmail}
+                onChange={(e) => setNewTaskEmail(e.target.value)}
+                placeholder="Email (optional)"
+                className="w-full px-4 py-2 bg-[#0f0f0f] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <input
+                type="text"
+                value={newTaskLinks}
+                onChange={(e) => setNewTaskLinks(e.target.value)}
+                placeholder="Links (comma separated, optional)"
+                className="w-full px-4 py-2 bg-[#0f0f0f] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <div className="flex gap-2">
                 <button
-                  onClick={addTask}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg font-medium transition-colors"
+                  onClick={createTask}
+                  disabled={creating}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm rounded-lg font-medium transition-colors"
                 >
-                  Add
+                  {creating ? "Creating..." : "Add Task"}
                 </button>
                 <button
                   onClick={() => {
                     setShowAddTask(false);
                     setNewTaskTitle("");
+                    setNewTaskDescription("");
+                    setNewTaskEmail("");
+                    setNewTaskLinks("");
                   }}
                   className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg font-medium transition-colors"
                 >
@@ -217,68 +265,73 @@ function TasksContent() {
             </div>
           )}
 
-          {/* Task Columns */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* To Do */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
-                  To Do
-                </h2>
-                <span className="text-xs text-gray-500">{todoTasks.length}</span>
-              </div>
-              <div className="space-y-3">
-                {todoTasks.map(task => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onToggle={toggleTaskStatus}
-                    onDelete={deleteTask}
-                  />
-                ))}
-              </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin h-8 w-8 border-4 border-green-500 border-t-transparent rounded-full mx-auto" />
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* To Do */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+                    To Do
+                  </h2>
+                  <span className="text-xs text-gray-500">{todoTasks.length}</span>
+                </div>
+                <div className="space-y-3">
+                  {todoTasks.map(task => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onStartMeeting={startMeeting}
+                      onComplete={completeTask}
+                    />
+                  ))}
+                </div>
+              </div>
 
-            {/* In Progress */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
-                  In Progress
-                </h2>
-                <span className="text-xs text-gray-500">{inProgressTasks.length}</span>
+              {/* In Progress */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+                    In Progress
+                  </h2>
+                  <span className="text-xs text-gray-500">{inProgressTasks.length}</span>
+                </div>
+                <div className="space-y-3">
+                  {inProgressTasks.map(task => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onStartMeeting={startMeeting}
+                      onComplete={completeTask}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="space-y-3">
-                {inProgressTasks.map(task => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onToggle={toggleTaskStatus}
-                    onDelete={deleteTask}
-                  />
-                ))}
-              </div>
-            </div>
 
-            {/* Done */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
-                  Done
-                </h2>
-                <span className="text-xs text-gray-500">{doneTasks.length}</span>
-              </div>
-              <div className="space-y-3">
-                {doneTasks.map(task => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onToggle={toggleTaskStatus}
-                    onDelete={deleteTask}
-                  />
-                ))}
+              {/* Done */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+                    Done
+                  </h2>
+                  <span className="text-xs text-gray-500">{doneTasks.length}</span>
+                </div>
+                <div className="space-y-3">
+                  {doneTasks.map(task => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onStartMeeting={startMeeting}
+                      onComplete={completeTask}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </>
@@ -287,50 +340,52 @@ function TasksContent() {
 
 function TaskCard({
   task,
-  onToggle,
-  onDelete,
+  onStartMeeting,
+  onComplete,
 }: {
   task: Task;
-  onToggle: (id: string) => void;
-  onDelete: (id: string) => void;
+  onStartMeeting: (id: string) => void;
+  onComplete: (id: string) => void;
 }) {
-  const priorityColors = {
-    low: "bg-gray-600",
-    medium: "bg-yellow-600",
-    high: "bg-red-600",
-  };
-
   return (
-    <div className="bg-[#1a1a1a] rounded-lg p-4 border border-gray-800 hover:border-gray-700 transition-colors group">
-      <div className="flex items-start justify-between mb-2">
-        <h3
-          className={`text-sm font-medium text-white cursor-pointer ${
-            task.status === "done" ? "line-through opacity-60" : ""
-          }`}
-          onClick={() => onToggle(task.id)}
-        >
+    <div className="bg-[#1a1a1a] rounded-lg p-4 border border-gray-800 hover:border-gray-700 transition-colors">
+      <div className="mb-2">
+        <h3 className="text-sm font-medium text-white mb-1">
           {task.title}
         </h3>
-        <button
-          onClick={() => onDelete(task.id)}
-          className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all text-sm"
-        >
-          ×
-        </button>
+        {task.description && (
+          <p className="text-xs text-gray-400 mb-2">{task.description}</p>
+        )}
+        {task.email && (
+          <p className="text-xs text-gray-500">📧 {task.email}</p>
+        )}
       </div>
-      {task.description && (
-        <p className="text-xs text-gray-400 mb-3">{task.description}</p>
-      )}
-      <div className="flex items-center justify-between">
-        <span className={`text-xs px-2 py-1 rounded ${priorityColors[task.priority]} text-white`}>
-          {task.priority}
-        </span>
-        <button
-          onClick={() => onToggle(task.id)}
-          className="text-xs text-gray-500 hover:text-green-400 transition-colors"
-        >
-          {task.status === "todo" ? "Start" : task.status === "in_progress" ? "Complete" : "Reset"}
-        </button>
+      
+      <div className="flex gap-2 mt-3">
+        {task.status === "todo" && (
+          <button
+            onClick={() => onStartMeeting(task.id)}
+            className="flex-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded font-medium transition-colors"
+          >
+            Start Meeting
+          </button>
+        )}
+        {task.status === "in_progress" && (
+          <button
+            onClick={() => onComplete(task.id)}
+            className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded font-medium transition-colors"
+          >
+            Complete
+          </button>
+        )}
+        {task.meeting_link && task.status === "in_progress" && (
+          <a
+            href={task.meeting_link}
+            className="flex-1 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded font-medium transition-colors text-center"
+          >
+            Join Meeting
+          </a>
+        )}
       </div>
     </div>
   );
