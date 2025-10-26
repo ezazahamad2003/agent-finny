@@ -10,7 +10,14 @@
 - **🌐 Live Website:** [https://agent-finny.vercel.app/](https://agent-finny.vercel.app/)
 
 ### 📺 **Demo Video**
-**[Watch Demo Video on YouTube →](https://www.youtube.com/watch?v=fRZdHzfZcdM)**
+
+<div align="center">
+
+[![Watch Demo Video on YouTube](https://img.youtube.com/vi/fRZdHzfZcdM/maxresdefault.jpg)](https://www.youtube.com/watch?v=fRZdHzfZcdM)
+
+[Watch on YouTube →](https://www.youtube.com/watch?v=fRZdHzfZcdM)
+
+</div>
 
 ## 🏆 Built for Startup Track
 
@@ -24,11 +31,11 @@ Built with industry-leading tools and platforms:
 
 <div align="center">
   
-![Y Combinator](frontend/public/readme/yc.png)
-![OpenAI](frontend/public/readme/gpt.png)
-![Redis](frontend/public/readme/redis.png)
-![Lava Payments](frontend/public/readme/lava.png)
-![Plaid](frontend/public/readme/plaid.png)
+<img src="frontend/public/readme/yc.png" alt="Y Combinator" height="40"/>
+<img src="frontend/public/readme/gpt.png" alt="OpenAI" height="40"/>
+<img src="frontend/public/readme/redis.png" alt="Redis" height="40"/>
+<img src="frontend/public/readme/lava.png" alt="Lava Payments" height="40"/>
+<img src="frontend/public/readme/plaid.png" alt="Plaid" height="40"/>
 
 </div>
 
